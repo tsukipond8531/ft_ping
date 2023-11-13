@@ -1,3 +1,4 @@
+#include "utils.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -24,4 +25,10 @@ uint16_t compute_checksum(void const *bytes, size_t const number) {
 
 bool is_valid_checksum(void const *bytes, size_t const number) {
   return compute_checksum(bytes, number) == 0x0;
+}
+
+void ft_memcpy(void *const dest, const void *const src, size_t const number) {
+  for (size_t i = 0; i < number; i++) {
+    *((uint8_t *)(dest + i)) = *((uint8_t *)(src + i));
+  }
 }

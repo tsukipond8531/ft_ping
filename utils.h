@@ -8,5 +8,6 @@
 
 uint16_t compute_checksum(void const *bytes, size_t const number);
 bool is_valid_checksum(void const *bytes, size_t const number);
+void ft_memcpy(void *const dest, void const *const src, size_t const number);
 
 #endif // !UTILS_H_

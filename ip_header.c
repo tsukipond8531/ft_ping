@@ -27,4 +27,15 @@ t_ip_header *unpack_ip_header(void const *const bytes, size_t const number) {
   uint16_t packet_header_checksum;
 
   packet_header_length_32bit_words = *((uint8_t *)bytes) & 0xff;
+  return ip;
+}
+
+uint8_t *pack_ip_header(t_ip_header const *const ip) {
+  uint8_t *bytes;
+
+  bytes = malloc(sizeof(uint8_t) * ip->internet_header_length);
+  if (!bytes) {
+    printf("An error occurred whilst allocating memory");
+    exit(1);
+  }
 }
