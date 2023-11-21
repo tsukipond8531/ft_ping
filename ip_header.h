@@ -8,10 +8,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-typedef enum e_ip_versions {
-  IP_V4 = 0x4,
-} t_ip_versions;
-
 typedef enum e_ip_types_of_service {
   IP_PREC_NETWORK_CONTROL = 0xe0,
   IP_PREC_INET_CONTROL = 0xc0,
@@ -33,6 +29,8 @@ typedef enum e_ip_protocols {
 ** IP Header
 **
 ** Implementation of the RFC 791, taking in consideration endianness.
+**
+** /!\ ONLY IPv4 IS SUPPORTED /!\
 **
 ** The setting of fields is only recommended through the respective
 ** setters, as the behaviour will be more natural and the checksum
@@ -66,19 +64,35 @@ typedef struct __attribute__((packed)) s_ip_header {
 /*
 ** create_ip_header
 **
-** Creates an IP header for IPv4 with basic fields set
+** Allocated the IP header and creates an IP header for
+** IPv4 with basic fields set
 */
 t_ip_header *create_ip_header(void);
-t_ip_header *unpack_ip_header(void const *const bytesnumber);
+/*
+** unpack_ip_header
+**
+** Allocates the IP header and creates an IP header based
+** on the incoming packet. All fields are assumed to be
+** in network format and converted to host format,
+** including checksum.
+**
+** unpack_ip_header(pack_ip_header(unpack_ip_header(pack_ip_header(create_ip_header()))))
+** Will generate leaks, but the resulting unpacked structure will be
+** exactly the initial one
+*/
+t_ip_header *unpack_ip_header(void const *const bytes);
 /*
 ** pack_ip_header
 **
 ** Allocates an array of bytes containing the data of the IP
 ** header. The array is returned in network format with
 ** the checksum in network format as well
+**
+** unpack_ip_header(pack_ip_header(unpack_ip_header(pack_ip_header(create_ip_header()))))
+** Will generate leaks, but the resulting unpacked structure will be
+** exactly the initial one
 */
 uint8_t *pack_ip_header(t_ip_header const *const ip);
-void set_version(t_ip_header *const ip, t_ip_versions const version);
 void set_internet_header_length(t_ip_header *const ip);
 void set_type_of_service(t_ip_header *const ip,
                          t_ip_types_of_service const tos);
