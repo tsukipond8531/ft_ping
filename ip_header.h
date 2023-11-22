@@ -93,15 +93,70 @@ t_ip_header *unpack_ip_header(void const *const bytes);
 ** exactly the initial one
 */
 uint8_t *pack_ip_header(t_ip_header const *const ip);
+/*
+** set_internet_header_length
+**
+** Sets the IP header length dynamically according to the current
+** content.
+** /!\ Must be called specially if setting options /!\
+*/
 void set_internet_header_length(t_ip_header *const ip);
+/*
+** set_type_of_service
+**
+** Sets the type of service using the header t_ip_types_of_service.
+** Set the type of service using the | operator:
+** IP_PREC_CRIT | IP_DELAY_LOW | IP_RELIABILITY_HIGH
+*/
 void set_type_of_service(t_ip_header *const ip,
                          t_ip_types_of_service const tos);
-void set_total_length(t_ip_header *const ip, uint16_t const length);
+/*
+** set_body_length
+**
+** In bytes, sets the body length that will be attached to the
+** header. The total_length will automatically be set according
+** to the internet_header_length
+*/
+void set_body_length(t_ip_header *const ip, uint16_t const length);
+/*
+** set_identification
+**
+** Overwrites the beautiful identification set by default 0x4242
+** and defines a new identification for the IP frame
+*/
 void set_identification(t_ip_header *const ip, uint16_t const id);
+/*
+** set_time_to_live
+**
+** Overrides the default 0xff (255) time to live and sets a new
+** one for the given IP header
+*/
 void set_time_to_live(t_ip_header *const ip, uint8_t const ttl);
-void set_protocol(t_ip_header *const ip, t_ip_protocols const protocols);
+/*
+** set_protocol
+**
+** Sets the protocol using the t_ip_protocols enum
+*/
+void set_protocol(t_ip_header *const ip, t_ip_protocols const protocol);
+/*
+** set_checksum
+**
+** Recomputes the checksum for the IP frame, using for it
+** the network byte order BUT leaving the checksum in host
+** byte order until it's packed using pack_ip_header
+*/
 void set_checksum(t_ip_header *const ip);
+/*
+** set_source
+**
+** Sets the source to be used by the IP frame
+*/
 void set_source(t_ip_header *const ip, uint32_t const source);
+/*
+** set_destination
+**
+** Sets the destination to be targetted by the IP frame
+*/
 void set_destination(t_ip_header *const ip, uint32_t const destination);
 
 #endif // !IP_HEADER_H_
