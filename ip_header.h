@@ -139,13 +139,13 @@ void set_time_to_live(t_ip_header *const ip, uint8_t const ttl);
 */
 void set_protocol(t_ip_header *const ip, t_ip_protocols const protocol);
 /*
-** set_checksum
+** set_ip_header_checksum
 **
 ** Recomputes the checksum for the IP frame, using for it
 ** the network byte order BUT leaving the checksum in host
 ** byte order until it's packed using pack_ip_header
 */
-void set_checksum(t_ip_header *const ip);
+void set_ip_header_checksum(t_ip_header *const ip);
 /*
 ** set_source
 **

@@ -19,7 +19,7 @@ t_ip_header *create_ip_header(void) {
   ip->total_length = 20;
   ip->identification = 0x4242;
   ip->time_to_live = 0xff;
-  set_checksum(ip);
+  set_ip_header_checksum(ip);
   return ip;
 }
 
@@ -77,43 +77,43 @@ void set_internet_header_length(t_ip_header *const ip) {
   if (ip->options) {
     ip->internet_header_length = 6;
     ip->total_length += WORDS_TO_BYTES(1);
-    set_checksum(ip);
+    set_ip_header_checksum(ip);
     return;
   }
   if (ip->internet_header_length != 6)
     return;
   ip->internet_header_length = 5;
   ip->total_length -= WORDS_TO_BYTES(1);
-  set_checksum(ip);
+  set_ip_header_checksum(ip);
 }
 
 void set_type_of_service(t_ip_header *const ip,
                          t_ip_types_of_service const tos) {
   ip->type_of_service = tos;
-  set_checksum(ip);
+  set_ip_header_checksum(ip);
 }
 
 void set_body_length(t_ip_header *const ip, uint16_t const length) {
   ip->total_length = WORDS_TO_BYTES(ip->internet_header_length) + length;
-  set_checksum(ip);
+  set_ip_header_checksum(ip);
 }
 
 void set_identification(t_ip_header *const ip, uint16_t const id) {
   ip->identification = id;
-  set_checksum(ip);
+  set_ip_header_checksum(ip);
 }
 
 void set_time_to_live(t_ip_header *const ip, uint8_t const ttl) {
   ip->time_to_live = ttl;
-  set_checksum(ip);
+  set_ip_header_checksum(ip);
 }
 
 void set_protocol(t_ip_header *const ip, t_ip_protocols const protocol) {
   ip->protocol = protocol;
-  set_checksum(ip);
+  set_ip_header_checksum(ip);
 }
 
-void set_checksum(t_ip_header *const ip) {
+void set_ip_header_checksum(t_ip_header *const ip) {
   void *bytes;
 
   ip->checksum = 0;
@@ -125,10 +125,10 @@ void set_checksum(t_ip_header *const ip) {
 
 void set_source(t_ip_header *const ip, uint32_t const source) {
   ip->source = source;
-  set_checksum(ip);
+  set_ip_header_checksum(ip);
 }
 
 void set_destination(t_ip_header *const ip, uint32_t const destination) {
   ip->destination = destination;
-  set_checksum(ip);
+  set_ip_header_checksum(ip);
 }
