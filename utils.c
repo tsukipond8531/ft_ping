@@ -1,8 +1,6 @@
 #include "utils.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 uint16_t compute_checksum(void const *bytes, size_t const number) {
   uint16_t const *words = bytes;
