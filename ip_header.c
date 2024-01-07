@@ -12,8 +12,13 @@ t_ip_header *create_ip_header(void) {
     printf("An error occurred whilst allocating memory\n");
     exit(1);
   }
-  for (size_t i = 0; i < sizeof(t_ip_header); i++)
-    *((uint8_t *)(ip + i)) = 0;
+  ip->type_of_service = 0;
+  ip->fragmentation = 0;
+  ip->protocol = 0;
+  ip->checksum = 0;
+  ip->source = 0;
+  ip->destination = 0;
+  ip->options = 0;
   ip->version = 0x04;
   ip->internet_header_length = 0x05;
   ip->total_length = 20;
