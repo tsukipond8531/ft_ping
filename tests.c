@@ -279,6 +279,27 @@ void icmp(void) {
   }
   printf("[OK][t_icmp] Created - pack - unpack - pack - unpack test IP header "
          "and ICMP payload\n");
+  {
+    t_ip_header *ip_header = create_ip_header();
+    t_icmp *icmp = create_icmp(ICMP_ECHO);
+    uint8_t *bytes;
+
+    set_body_length(ip_header, sizeof(t_icmp));
+    set_identification(ip_header, 0x4242);
+    set_time_to_live(ip_header, 64);
+    set_protocol(ip_header, IP_ICMP);
+    set_source(ip_header, 0xc0a80050);
+    set_destination(ip_header, 0x08080808);
+
+    set_identifier(icmp, 0x4141);
+
+    bytes = icmp_to_packet(ip_header, icmp);
+    assert(bytes != NULL);
+    free(bytes);
+    free(icmp);
+    free(ip_header);
+  }
+  printf("[OK][t_icmp] Basic normal usage\n");
 }
 
 int main(void) {
