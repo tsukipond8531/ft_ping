@@ -1,7 +1,8 @@
 MSG = @echo "  \x1b[45m\x1b[38;2;16;19;33m\x1b[45m\x1b[01;37m    ft_ping \x1b[0m\x1b[35m\x1b[0m\x1b[0;90m $(1)\x1b[0m"
 
-SRCS := utils.c
-				#ip_header.c
+SRCS := utils.c \
+				ip_header.c \
+				icmp.c
 MAIN := main.c
 TEST := tests.c
 
@@ -18,7 +19,7 @@ NAME := ft_ping
 $(NAME): $(OBJS) $(OBJM)
 					@echo ""
 					$(call MSG,"Linking objects into $(NAME)")
-					@cc -o $(NAME) $(OBJS)
+					@cc -o $(NAME) $(OBJS) $(OBJM)
 					$(call MSG,"Finished linking")
 					@echo ""
 
