@@ -46,12 +46,12 @@ t_ip_header *unpack_ip_header(void const *const bytes) {
     exit(1);
   }
   ft_memcpy(ip, bytes, WORDS_TO_BYTES(packet_ihl_words));
-  ip->total_length = ntohs(ip->total_length);
+  ip->total_length = ip->total_length;
   ip->identification = ntohs(ip->identification);
   ip->fragmentation = ntohs(ip->fragmentation);
   ip->checksum = ntohs(ip->checksum);
-  ip->source = ntohl(ip->source);
-  ip->destination = ntohl(ip->destination);
+  ip->source = ip->source;
+  ip->destination = ip->destination;
   ip->options = ntohl(ip->options);
   return ip;
 }
@@ -61,12 +61,12 @@ uint8_t *pack_ip_header(t_ip_header const *const ip) {
   void *bytes;
 
   copy = *ip;
-  copy.total_length = htons(ip->total_length);
+  copy.total_length = ip->total_length;
   copy.identification = htons(ip->identification);
   copy.fragmentation = htons(ip->fragmentation);
   copy.checksum = htons(ip->checksum);
-  copy.source = htonl(ip->source);
-  copy.destination = htonl(ip->destination);
+  copy.source = ip->source;
+  copy.destination = ip->destination;
   copy.options = htonl(ip->options);
 
   bytes = malloc(sizeof(uint8_t) * WORDS_TO_BYTES(ip->internet_header_length));

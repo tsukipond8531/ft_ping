@@ -149,13 +149,15 @@ void set_ip_header_checksum(t_ip_header *const ip);
 /*
 ** set_source
 **
-** Sets the source to be used by the IP frame
+** Sets the source to be used by the IP frame. It is expected
+** in NETWORK FORMAT already!!
 */
 void set_source(t_ip_header *const ip, uint32_t const source);
 /*
 ** set_destination
 **
-** Sets the destination to be targetted by the IP frame
+** Sets the destination to be targetted by the IP frame. It is expected
+** in NETWORK FORMAT already!!
 */
 void set_destination(t_ip_header *const ip, uint32_t const destination);
 

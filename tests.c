@@ -1,6 +1,7 @@
 #include "icmp.h"
 #include "ip_header.h"
 #include "utils.h"
+#include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
@@ -162,6 +163,28 @@ void ip_header(void) {
   }
   printf(
       "[OK][t_ip_header] Multiple repack to assess checksum and data safety\n");
+  {
+    t_ip_header *ip_header = create_ip_header();
+    in_addr_t ip = inet_addr("10.5.16.78");
+    in_addr_t dest = inet_addr("163.172.250.16");
+
+    set_body_length(ip_header, sizeof(t_icmp));
+    set_identification(ip_header, 0x4242);
+    set_time_to_live(ip_header, 64);
+    set_protocol(ip_header, IP_ICMP);
+    set_source(ip_header, ip);
+    set_destination(ip_header, dest);
+
+    uint8_t *bytes = pack_ip_header(ip_header);
+
+    t_ip_header *ip_header2 = unpack_ip_header(bytes);
+
+    assert(ip_header->total_length == ip_header2->total_length);
+    assert(ip_header->source == ip_header2->source);
+    assert(ip_header->destination == ip_header2->destination);
+  }
+  printf("[OK][t_ip_header] Check of source and destination pack / unpack "
+         "matching\n");
 }
 
 void icmp(void) {
