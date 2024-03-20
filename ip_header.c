@@ -1,5 +1,6 @@
 #include "ip_header.h"
 #include "utils.h"
+#include <arpa/inet.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

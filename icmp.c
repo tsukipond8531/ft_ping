@@ -1,6 +1,7 @@
 #include "icmp.h"
 #include "ip_header.h"
 #include "utils.h"
+#include <arpa/inet.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
