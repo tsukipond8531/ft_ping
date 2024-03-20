@@ -1,53 +1,42 @@
-#include "icmp.h"
-#include "ip_header.h"
+#include "ft_ping.h"
+#include <argp.h>
 #include <arpa/inet.h>
-#include <errno.h>
 #include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-int main(void) {
-  t_ip_header *ip_header = create_ip_header();
-  t_icmp *icmp = create_icmp(ICMP_ECHO);
+int main(int argc, char **argv) {
+  struct s_ft_ping ping = {0, 0};
+  int iarghost;
+  struct argp args = {0, 0, 0, 0, 0, 0, 0};
+  struct argp_option options[] = {
+      {"count", 'c', "NUMBER", 0, "stop after sending NUMBER packets", 0},
+      {"interval", 'i', "NUMBER", 0,
+       "wait NUMBER seconds between sending each packet", 0},
+      {"ttl", 0x04, "N", 0, "specify N as time-to-live", 0},
+      {"tos", 'T', "NUM", 0, "set type of service (TOS) to NUM", 0},
+      {"verbose", 'v', 0, 0, "verbose output", 0},
+      {"timeout", 'w', "N", 0, "stop after N seconds", 0},
+      {"linger", 'W', "N", 0, "number of seconds to wait for response", 0},
+      {"flood", 'f', 0, 0, "flood ping", 0},
+      {"preload", 'l', "NUMBER", 0,
+       "send NUMBER packets as fast as possible before\nfalling into normal "
+       "mode of behavior",
+       0},
+      {"pattern", 'p', "PATTERN", 0,
+       "fill ICMP packet with given pattern (hex)", 0},
+      {0}};
 
-  in_addr_t ip = inet_addr("10.5.16.78");
-  in_addr_t dest = inet_addr("163.172.250.16");
+  argp_program_bug_address = "<mmartin-@student.42berlin.de>";
+  argp_program_version =
+      "ft_ping (42 Advanced) 1.0\nWritten by Mario Martin Moreno";
 
-  set_body_length(ip_header, sizeof(t_icmp));
-  set_identification(ip_header, 0x4242);
-  set_time_to_live(ip_header, 64);
-  set_protocol(ip_header, IP_ICMP);
-  set_source(ip_header, ip);
-  set_destination(ip_header, dest);
+  args.args_doc = "HOST ...";
+  args.doc = "Send ICMP ECHO_REQUEST packets to network hosts.\vThe program "
+             "requires superuser privileges due to raw packets.";
+  args.options = options;
 
-  set_identifier(icmp, 0x1914);
-
-  uint8_t *bytes = icmp_to_packet(ip_header, icmp);
-  for (size_t i = 0; i < ip_header->total_length; i++)
-    printf("%02x ", *(bytes + i));
-
-  int sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
-  if (sock < 0)
-    exit(42);
-  struct sockaddr_in addr;
-
-  addr.sin_port = 42;
-  addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = dest;
-  int removeheader = 1;
-  if (setsockopt(sock, IPPROTO_IP, IP_HDRINCL, &removeheader,
-                 sizeof(removeheader)) < 0)
-    exit(44);
-  int sent = sendto(sock, bytes, ip_header->total_length, 0,
-                    (struct sockaddr *)&addr, sizeof(struct sockaddr_in));
-  if (sent < 0) {
-    perror("Error whilst sending bytes");
-    printf("\nERRNO: %d\n", errno);
-    exit(46);
-  }
-  printf("Bytes sent!\n");
+  argp_parse(&args, argc, argv, 0, &iarghost, &ping);
 
   return 0;
 }
