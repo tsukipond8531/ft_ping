@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 t_ip_header *create_ip_header(void) {
   t_ip_header *ip;
@@ -46,7 +47,7 @@ t_ip_header *unpack_ip_header(void const *const bytes) {
     printf("Attempted to unpack an IP header of size too large\n");
     exit(1);
   }
-  ft_memcpy(ip, bytes, WORDS_TO_BYTES(packet_ihl_words));
+  memcpy(ip, bytes, WORDS_TO_BYTES(packet_ihl_words));
   ip->total_length = ip->total_length;
   ip->identification = ntohs(ip->identification);
   ip->fragmentation = ntohs(ip->fragmentation);
@@ -75,7 +76,7 @@ uint8_t *pack_ip_header(t_ip_header const *const ip) {
     printf("An error occurred whilst allocating memory\n");
     exit(1);
   }
-  ft_memcpy(bytes, &copy, WORDS_TO_BYTES(ip->internet_header_length));
+  memcpy(bytes, &copy, WORDS_TO_BYTES(ip->internet_header_length));
   return bytes;
 }
 

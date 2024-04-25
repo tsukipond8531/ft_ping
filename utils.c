@@ -1,8 +1,11 @@
 #include "utils.h"
+#include "ft_ping.h"
+#include <argp.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 uint16_t compute_checksum(void const *bytes, size_t const number) {
   uint16_t const *words = bytes;
@@ -27,17 +30,8 @@ bool is_valid_checksum(void const *bytes, size_t const number) {
   return compute_checksum(bytes, number) == 0x0;
 }
 
-void ft_memcpy(void *const dest, const void *const src, size_t const number) {
-  for (size_t i = 0; i < number; i++) {
-    *((uint8_t *)(dest + i)) = *((uint8_t *)(src + i));
-  }
-}
-
 void terminate(int status_code, char *message, t_ft_ping *ft_ping) {
-  if (ft_ping && ft_ping->icmp)
-    free(ft_ping->icmp);
-  if (ft_ping && ft_ping->header)
-    free(ft_ping->header);
+  remove_all_hosts(ft_ping);
   if (message)
     puts(message);
   exit(status_code);

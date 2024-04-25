@@ -9,7 +9,6 @@
 
 uint16_t compute_checksum(void const *bytes, size_t const number);
 bool is_valid_checksum(void const *bytes, size_t const number);
-void ft_memcpy(void *const dest, void const *const src, size_t const number);
 void terminate(int status_code, char *message, t_ft_ping *ft_ping);
 
 #endif // !UTILS_H_
