@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 uint16_t compute_checksum(void const *bytes, size_t const number) {
   uint16_t const *words = bytes;

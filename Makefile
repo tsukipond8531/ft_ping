@@ -1,6 +1,7 @@
 SRCS := utils.c \
 				ip_header.c \
-				icmp.c
+				icmp.c \
+				ft_ping.c
 MAIN := main.c
 TEST := tests.c
 
@@ -16,6 +17,7 @@ NAME := ft_ping
 $(NAME): $(OBJS) $(OBJM)
 					@echo "Linking objects into $(NAME)"
 					/usr/bin/cc -o $(NAME) $(OBJS) $(OBJM)
+					/usr/bin/strip --strip-all $(NAME)
 					@echo "Finished linking"
 
 all: $(NAME)
