@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static errno_t parse_argument(int key, char *arg, struct argp_state *state) {
+static int parse_argument(int key, char *arg, struct argp_state *state) {
   t_ft_ping *ping = state->input;
   char *argend = NULL;
 

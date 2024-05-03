@@ -1,7 +1,9 @@
 SRCS := utils.c \
 				ip_header.c \
 				icmp.c \
-				ft_ping.c
+				ft_ping.c \
+				parser.c \
+				packet.c
 MAIN := main.c
 TEST := tests.c
 
