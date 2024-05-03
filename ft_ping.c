@@ -1,3 +1,4 @@
+#include "icmp.h"
 #include "utils.h"
 #include <netdb.h>
 #include <netinet/in.h>
@@ -56,5 +57,16 @@ int resolve_host(t_host *host) {
     }
   }
   host->ip.s_addr = host_as_ip;
+  return 0;
+}
+
+int host_loop(t_settings const *const settings, t_host *host) {
+  int sockfd;
+  fd_set *read;
+  fd_set *write;
+
+  if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+    return 1;
+
   return 0;
 }
