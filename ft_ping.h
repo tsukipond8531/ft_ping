@@ -2,18 +2,16 @@
 #define FT_PING_H_
 #pragma once
 
-#include "icmp.h"
-#include "ip_header.h"
 #include <arpa/inet.h>
 #include <stdbool.h>
+
+#define DATA_SIZE 56
 
 /*
 ** An ICMP ECHO_REQUEST linked list of all packets sent
 */
 typedef struct s_packet {
   uint64_t timestamp;
-  t_ip_header *header;
-  t_icmp *icmp;
   struct s_packet *next;
 } t_packet;
 
@@ -53,9 +51,5 @@ typedef struct s_ft_ping {
 void remove_all_hosts(t_ft_ping *ping);
 void add_host(t_ft_ping *ping, char const *host);
 int resolve_host(t_host *host);
-void add_packet(t_ft_ping *ping, t_host *host, t_ip_header *header,
-                t_icmp *icmp);
-t_packet *get_packet_by_seq(t_host const *host, uint16_t const sequence);
-void main_loop(t_ft_ping *ping);
 
 #endif // !FT_PING_H_

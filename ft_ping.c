@@ -1,10 +1,10 @@
-#include "ft_ping.h"
 #include "utils.h"
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 
 void remove_all_hosts(t_ft_ping *ping) {
   t_host *htmp;
@@ -16,8 +16,6 @@ void remove_all_hosts(t_ft_ping *ping) {
     ptmp = host->packets;
     for (t_packet *packet = ptmp; packet; packet = ptmp) {
       ptmp = packet->next;
-      free(packet->header);
-      free(packet->icmp);
       free(packet);
     }
     free(host);
@@ -60,31 +58,3 @@ int resolve_host(t_host *host) {
   host->ip.s_addr = host_as_ip;
   return 0;
 }
-
-void add_packet(t_ft_ping *ping, t_host *host, t_ip_header *header,
-                t_icmp *icmp) {
-  t_packet **head;
-  t_packet *new;
-
-  new = calloc(sizeof(t_packet), 1);
-  if (!new)
-    terminate(1, "Allocation error", ping);
-
-  new->header = header;
-  new->icmp = icmp;
-
-  head = &(host->packets);
-  while (*head)
-    *head = (*head)->next;
-  *head = new;
-}
-
-t_packet *get_packet_by_seq(t_host const *host, uint16_t const sequence) {
-  for (t_packet *current = host->packets; current; current = current->next) {
-    if (current->icmp->payload.echo.sequence == sequence)
-      return current;
-  }
-  return NULL;
-}
-
-void main_loop(t_ft_ping *ping) {}

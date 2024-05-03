@@ -1,15 +1,8 @@
 SRCS := utils.c \
-				ip_header.c \
-				icmp.c \
 				ft_ping.c \
 				parser.c \
-				packet.c
-MAIN := main.c
-TEST := tests.c
-
+				main.c
 OBJS = $(SRCS:.c=.o)
-OBJM = $(MAIN:.c=.o)
-OBJT = $(TEST:.c=.o)
 
 NAME := ft_ping
 
@@ -24,14 +17,6 @@ $(NAME): $(OBJS) $(OBJM)
 
 all: $(NAME)
 
-test: $(OBJS) $(OBJT)
-					@echo "Finished linking"
-					/usr/bin/cc -o $(NAME)_test $(OBJS) $(OBJT)
-					echo "Testing program..."
-					@./$(NAME)_test
-					@echo "Everything is good!"
-					@rm -f $(NAME)_test
-
 bonus: $(NAME)
 
 clean:
@@ -44,4 +29,4 @@ fclean: clean
 
 re: fclean $(NAME)
 
-.PHONY: math all bonus clean fclean
+.PHONY: all bonus clean fclean re
