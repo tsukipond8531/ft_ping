@@ -1,4 +1,4 @@
-#include "icmp.h"
+#include "ft_ping.h"
 #include "utils.h"
 #include <netdb.h>
 #include <netinet/in.h>
@@ -7,37 +7,33 @@
 #include <string.h>
 #include <sys/socket.h>
 
-void remove_all_hosts(t_ft_ping *ping) {
-  t_host *htmp;
-  t_packet *ptmp;
+extern t_ft_ping ping;
 
-  htmp = ping->hosts;
+void remove_all_hosts() {
+  t_host *htmp;
+
+  htmp = ping.hosts;
   for (t_host *host = htmp; host; host = htmp) {
     htmp = host->next;
-    ptmp = host->packets;
-    for (t_packet *packet = ptmp; packet; packet = ptmp) {
-      ptmp = packet->next;
-      free(packet);
-    }
     free(host);
   }
 }
 
-void add_host(t_ft_ping *ping, char const *host) {
+void add_host(char const *host) {
   t_host **head;
   t_host *newhost;
 
   newhost = calloc(sizeof(t_host), 1);
   if (!newhost)
-    terminate(1, "Allocation error", ping);
+    terminate(1, "Allocation error");
   newhost->host = host;
-  head = &(ping->hosts);
+  head = &(ping.hosts);
   while (*head)
     *head = (*head)->next;
   *head = newhost;
 }
 
-int resolve_host(t_host *host) {
+static int resolve_host(t_host *host) {
   struct addrinfo *host_as_host;
   in_addr_t host_as_ip;
 
@@ -60,13 +56,41 @@ int resolve_host(t_host *host) {
   return 0;
 }
 
-int host_loop(t_settings const *const settings, t_host *host) {
+static int host_setup_socket(t_host *host) {
+  int sockfd;
+  uint64_t sockopt;
+  struct linger lingeropts;
+
+  if ((sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP)) < 0)
+    terminate(1, "ft_ping: unexpected error whilst creating socket");
+  if (IS_TTL_SET(ping.settings.flags)) {
+    sockopt = ping.settings.ttl;
+    if (setsockopt(sockfd, IPPROTO_IP, IP_TTL, &sockopt, sizeof(uint64_t)) < 0)
+      terminate(1, "ft_ping: invalid TTL (0 <= TTL <= 255)");
+  }
+  if (IS_TOS_SET(ping.settings.flags)) {
+    sockopt = ping.settings.tos;
+    if (setsockopt(sockfd, IPPROTO_IP, IP_TOS, &sockopt, sizeof(uint64_t)) < 0)
+      terminate(1, "ft_ping: invalid type of service (see <netinet/in.h>)");
+  }
+  if (IS_LINGER_SET(ping.settings.flags)) {
+    lingeropts.l_onoff = 1;
+    lingeropts.l_linger = ping.settings.linger;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_LINGER, &lingeropts,
+                   sizeof(struct linger)) < 0)
+      terminate(1, "ft_ping: invalid linger");
+  }
+
+  return sockfd;
+}
+
+int host_loop(t_host *host) {
   int sockfd;
   fd_set *read;
   fd_set *write;
 
-  if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-    return 1;
-
+  if (resolve_host(host) != 0)
+    terminate(1, "ft_ping: host has invalid name");
+  sockfd = host_setup_socket(host);
   return 0;
 }

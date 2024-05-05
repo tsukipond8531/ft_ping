@@ -29,8 +29,8 @@ bool is_valid_checksum(void const *bytes, size_t const number) {
   return compute_checksum(bytes, number) == 0x0;
 }
 
-void terminate(int status_code, char *message, t_ft_ping *ft_ping) {
-  remove_all_hosts(ft_ping);
+void terminate(int status_code, char *message) {
+  remove_all_hosts();
   if (message)
     puts(message);
   exit(status_code);

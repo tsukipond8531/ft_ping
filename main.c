@@ -1,18 +1,12 @@
 #include "ft_ping.h"
 #include "parser.h"
 #include "utils.h"
-#include <argp.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <strings.h>
-#include <sys/socket.h>
-#include <unistd.h>
+
+t_ft_ping ping;
 
 int main(int argc, char **argv) {
-  t_ft_ping ping;
-
-  bzero(&ping, sizeof(t_ft_ping));
-  load_arguments(argc, argv, &ping);
-  terminate(0, "Success!", &ping);
+  load_arguments(argc, argv);
+  host_loop(ping.hosts);
+  terminate(0, "Success!");
   return 0;
 }
