@@ -25,6 +25,8 @@
 #define SET_PRELOAD_FLAG(x) (x | (0x1 << 7))
 #define SET_PATTERN_FLAG(x) (x | (0x1 << 8))
 
+typedef uint64_t t_host_time;
+
 /*
 ** The list of hosts that will be processed with its corresponding packet list
 */
@@ -34,6 +36,9 @@ typedef struct s_host {
   uint32_t transmitted;
   uint32_t received;
   uint32_t duplicated;
+  t_host_time first_time;
+  t_host_time last_time;
+  t_host_time total_time;
   struct s_host *next;
 } t_host;
 
@@ -59,8 +64,8 @@ typedef struct s_ft_ping {
   t_host *hosts;
 } t_ft_ping;
 
-void remove_all_hosts();
+void remove_all_hosts(void);
 void add_host(char const *host);
-int host_loop(t_host *host);
+void main_loop(void);
 
 #endif // !FT_PING_H_
