@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 uint16_t compute_checksum(void const *bytes, size_t const number) {
   uint16_t const *words = bytes;
@@ -27,6 +28,13 @@ uint16_t compute_checksum(void const *bytes, size_t const number) {
 
 bool is_valid_checksum(void const *bytes, size_t const number) {
   return compute_checksum(bytes, number) == 0x0;
+}
+
+t_host_time get_time_millis(void) {
+  struct timeval now;
+
+  gettimeofday(&now, NULL);
+  return now.tv_sec * 1000 + now.tv_usec / 1000;
 }
 
 void terminate(int status_code, char *message) {
