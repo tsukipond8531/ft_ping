@@ -32,6 +32,20 @@ void add_host(char const *host) {
   *head = newhost;
 }
 
+void print_host_stats(t_host const *const host) {
+  uint8_t packet_loss;
+
+  printf("--- %s ping statistics ---\n", host->host);
+  printf("%u packets transmitted, ", host->transmitted);
+  printf("%u packets received, ", host->received);
+  if (host->duplicated > 0)
+    printf("%+d duplicates, ", host->duplicated);
+  packet_loss = 0;
+  if (host->transmitted > 0)
+    packet_loss = 100 - (host->received / host->transmitted * 100);
+  printf("%u%% packet loss\n", packet_loss);
+}
+
 static int resolve_host(t_host *host) {
   struct addrinfo *host_as_host;
   in_addr_t host_as_ip;
@@ -141,7 +155,7 @@ void main_loop(void) {
 
   for (t_host *host = ping.hosts; host; host = host->next) {
     host_loop(sockfd, host);
-    // TODO Print statistics
+    print_host_stats(host);
   }
   close(sockfd);
 }
