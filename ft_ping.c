@@ -1,5 +1,6 @@
 #include "ft_ping.h"
 #include "utils.h"
+#include <math.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,6 +35,9 @@ void add_host(char const *host) {
 
 void print_host_stats(t_host const *const host) {
   uint8_t packet_loss;
+  double average;
+  double variance;
+  double stddev;
 
   printf("--- %s ping statistics ---\n", host->host);
   printf("%u packets transmitted, ", host->transmitted);
@@ -44,6 +48,20 @@ void print_host_stats(t_host const *const host) {
   if (host->transmitted > 0)
     packet_loss = 100 - (host->received / host->transmitted * 100);
   printf("%u%% packet loss\n", packet_loss);
+  printf("round-trip min/avg/max/stddev = ");
+  printf("%.3f/", host->min_time / 1000.0);
+  average = 0.0;
+  variance = 0.0;
+  stddev = 0.0;
+  if (host->transmitted > 0) {
+    average = host->total_time / (host->transmitted * 1000.0);
+    variance = (double)host->squared_total_time / (double)host->transmitted -
+               average * average;
+    stddev = sqrt(variance);
+  }
+  printf("%.3f/", average);
+  printf("%.3f/", host->max_time / 1000.f);
+  printf("%.3f ms\n", stddev);
 }
 
 static int resolve_host(t_host *host) {
@@ -100,7 +118,7 @@ static inline bool should_loop(t_host *host) {
   // If timeout is set, check if it has expired
   if (IS_TIMEOUT_SET(ping.settings.flags)) {
     bool const timeout_expired =
-        get_time_millis() - host->first_time > ping.settings.timeout * 1000;
+        get_time_micro() - host->first_time > ping.settings.timeout * 1000000;
     if (timeout_expired)
       return false;
   }
@@ -116,7 +134,7 @@ static inline bool should_loop(t_host *host) {
 }
 
 static inline bool should_send_packet(t_host *host) {
-  t_host_time const now = get_time_millis();
+  t_host_time const now = get_time_micro();
   uint64_t interval;
 
   // The default interval is 1 second, but can be overwritten by the settings
@@ -124,7 +142,7 @@ static inline bool should_send_packet(t_host *host) {
   if (IS_INTERVAL_SET(ping.settings.flags))
     interval = ping.settings.interval;
 
-  if (now - host->last_time <= interval * 1000)
+  if (now - host->last_time <= interval * 1000000)
     return false;
   return true;
 }
@@ -136,17 +154,20 @@ static void host_loop(int const sockfd, t_host *host) {
     terminate(1, "ft_ping: host has invalid name");
 
   (void)sockfd; // TODO Remove
-  time = get_time_millis();
+  time = get_time_micro();
   host->first_time = time;
+  host->last_time = time;
   while (should_loop(host)) {
     if (should_send_packet(host)) {
       printf("64 bytes from %u\n", host->ip.s_addr); // TODO Actual ping
       host->transmitted++;
       host->total_time += host->last_time - time;
+      host->squared_total_time +=
+          (host->last_time - time) * (host->last_time - time);
       host->last_time = time;
     }
     usleep(20);
-    time = get_time_millis();
+    time = get_time_micro();
   }
 }
 

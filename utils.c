@@ -30,11 +30,11 @@ bool is_valid_checksum(void const *bytes, size_t const number) {
   return compute_checksum(bytes, number) == 0x0;
 }
 
-t_host_time get_time_millis(void) {
+t_host_time get_time_micro(void) {
   struct timeval now;
 
   gettimeofday(&now, NULL);
-  return now.tv_sec * 1000 + now.tv_usec / 1000;
+  return now.tv_sec * 1000000 + now.tv_usec;
 }
 
 void terminate(int status_code, char *message) {

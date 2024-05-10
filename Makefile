@@ -5,13 +5,14 @@ SRCS := utils.c \
 OBJS = $(SRCS:.c=.o)
 
 NAME := ft_ping
+LIBS := -lm
 
 %.o: %.c
 					/usr/bin/cc -Wall -Werror -Wextra -c $< -o $@ -O3
 
 $(NAME): $(OBJS) $(OBJM)
 					@echo "Linking objects into $(NAME)"
-					/usr/bin/cc -o $(NAME) $(OBJS) $(OBJM)
+					/usr/bin/cc -o $(NAME) $(OBJS) $(OBJM) $(LIBS)
 					/usr/bin/strip --strip-all $(NAME)
 					@echo "Finished linking"
 

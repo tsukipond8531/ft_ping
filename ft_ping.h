@@ -39,6 +39,9 @@ typedef struct s_host {
   t_host_time first_time;
   t_host_time last_time;
   t_host_time total_time;
+  t_host_time squared_total_time;
+  t_host_time min_time;
+  t_host_time max_time;
   struct s_host *next;
 } t_host;
 
