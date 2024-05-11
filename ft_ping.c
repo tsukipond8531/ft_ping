@@ -137,6 +137,10 @@ static inline bool should_send_packet(t_host *host) {
   t_host_time const now = get_time_micro();
   uint64_t interval;
 
+  // The first packet should be instantly emitted
+  if (host->first_time == host->last_time)
+    return true;
+
   // The default interval is 1 second, but can be overwritten by the settings
   interval = 1;
   if (IS_INTERVAL_SET(ping.settings.flags))
@@ -158,16 +162,16 @@ static void host_loop(int const sockfd, t_host *host) {
   host->first_time = time;
   host->last_time = time;
   while (should_loop(host)) {
+    time = get_time_micro();
     if (should_send_packet(host)) {
       printf("64 bytes from %u\n", host->ip.s_addr); // TODO Actual ping
       host->transmitted++;
-      host->total_time += host->last_time - time;
+      host->total_time += time - host->last_time;
       host->squared_total_time +=
-          (host->last_time - time) * (host->last_time - time);
+          (time - host->last_time) * (time - host->last_time);
       host->last_time = time;
     }
     usleep(20);
-    time = get_time_micro();
   }
 }
 
