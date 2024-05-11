@@ -36,12 +36,12 @@ typedef struct s_host {
   uint32_t transmitted;
   uint32_t received;
   uint32_t duplicated;
-  t_host_time first_time;
-  t_host_time last_time;
-  t_host_time total_time;
-  t_host_time squared_total_time;
-  t_host_time min_time;
-  t_host_time max_time;
+  t_host_time first_timestamp;
+  t_host_time last_timestamp;
+  t_host_time total_time_micro;
+  t_host_time squared_total_time_micro;
+  t_host_time min_time_micro;
+  t_host_time max_time_micro;
   struct s_host *next;
 } t_host;
 

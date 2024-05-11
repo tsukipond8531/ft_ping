@@ -27,6 +27,7 @@ void add_host(char const *host) {
   if (!newhost)
     terminate(1, "Allocation error");
   newhost->host = host;
+  newhost->min_time_micro = UINT64_MAX;
   head = &(ping.hosts);
   while (*head)
     head = &((*head)->next);
@@ -35,7 +36,7 @@ void add_host(char const *host) {
 
 void print_host_stats(t_host const *const host) {
   uint8_t packet_loss;
-  double average;
+  double average_micro;
   double variance;
   double stddev;
 
@@ -49,19 +50,32 @@ void print_host_stats(t_host const *const host) {
     packet_loss = 100 - (host->received / host->transmitted * 100);
   printf("%u%% packet loss\n", packet_loss);
   printf("round-trip min/avg/max/stddev = ");
-  printf("%.3f/", host->min_time / 1000.0);
-  average = 0.0;
+  printf("%.3f/", host->min_time_micro / 1000.0);
+  average_micro = 0.0;
   variance = 0.0;
   stddev = 0.0;
   if (host->transmitted > 0) {
-    average = host->total_time / (host->transmitted * 1000.0);
-    variance = (double)host->squared_total_time / (double)host->transmitted -
-               average * average;
+    average_micro = (double)host->total_time_micro / host->transmitted;
+    variance = (double)host->squared_total_time_micro / host->transmitted -
+               average_micro * average_micro;
     stddev = sqrt(variance);
   }
-  printf("%.3f/", average);
-  printf("%.3f/", host->max_time / 1000.f);
-  printf("%.3f ms\n", stddev);
+  printf("%.3f/", average_micro / 1000.0);
+  printf("%.3f/", host->max_time_micro / 1000.0);
+  printf("%.3f ms\n", stddev / 1000.0);
+}
+
+static inline void update_host_stats(t_host *host, t_host_time const time) {
+  t_host_time const time_diff_micro = time - host->last_timestamp;
+
+  host->transmitted++;
+  host->total_time_micro += time_diff_micro;
+  host->squared_total_time_micro += time_diff_micro * time_diff_micro;
+  host->last_timestamp = time;
+  if (host->min_time_micro > time_diff_micro)
+    host->min_time_micro = time_diff_micro;
+  if (host->max_time_micro < time_diff_micro)
+    host->max_time_micro = time_diff_micro;
 }
 
 static int resolve_host(t_host *host) {
@@ -114,11 +128,11 @@ static int host_setup_socket(void) {
   return sockfd;
 }
 
-static inline bool should_loop(t_host *host) {
+static inline bool should_loop(t_host const *const host) {
   // If timeout is set, check if it has expired
   if (IS_TIMEOUT_SET(ping.settings.flags)) {
-    bool const timeout_expired =
-        get_time_micro() - host->first_time > ping.settings.timeout * 1000000;
+    bool const timeout_expired = get_time_micro() - host->first_timestamp >
+                                 ping.settings.timeout * 1000000;
     if (timeout_expired)
       return false;
   }
@@ -133,12 +147,12 @@ static inline bool should_loop(t_host *host) {
   return true;
 }
 
-static inline bool should_send_packet(t_host *host) {
+static inline bool should_send_packet(t_host const *const host) {
   t_host_time const now = get_time_micro();
   uint64_t interval;
 
   // The first packet should be instantly emitted
-  if (host->first_time == host->last_time)
+  if (host->first_timestamp == host->last_timestamp)
     return true;
 
   // The default interval is 1 second, but can be overwritten by the settings
@@ -146,7 +160,7 @@ static inline bool should_send_packet(t_host *host) {
   if (IS_INTERVAL_SET(ping.settings.flags))
     interval = ping.settings.interval;
 
-  if (now - host->last_time <= interval * 1000000)
+  if (now - host->last_timestamp <= interval * 1000000)
     return false;
   return true;
 }
@@ -159,17 +173,14 @@ static void host_loop(int const sockfd, t_host *host) {
 
   (void)sockfd; // TODO Remove
   time = get_time_micro();
-  host->first_time = time;
-  host->last_time = time;
+  host->first_timestamp = time;
+  host->last_timestamp = time;
   while (should_loop(host)) {
     time = get_time_micro();
     if (should_send_packet(host)) {
       printf("64 bytes from %u\n", host->ip.s_addr); // TODO Actual ping
-      host->transmitted++;
-      host->total_time += time - host->last_time;
-      host->squared_total_time +=
-          (time - host->last_time) * (time - host->last_time);
-      host->last_time = time;
+      update_host_stats(host, time); // TODO Use the received packet time, never
+                                     // the diff between execution times
     }
     usleep(20);
   }
