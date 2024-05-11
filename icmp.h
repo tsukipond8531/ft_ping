@@ -5,6 +5,9 @@
 #include <netdb.h>
 #include <sys/time.h>
 
+#define ICMP_ECHO 8
+#define ICMP_ECHO_REPLY 0
+
 typedef struct __attribute__((__packed__)) s_icmp {
   uint8_t type;
   uint8_t code;
@@ -22,8 +25,7 @@ typedef struct __attribute__((__packed__)) s_icmp {
  * When _datalen_ is not NULL but _data_ is, or the sizes do not match, the
  * behaviour is undefined.
  */
-uint8_t *icmp_bytes(t_icmp const *const icmp, uint8_t const *data,
-                    uint16_t *datalen);
+uint8_t *icmp_bytes(t_icmp icmp, uint8_t const *data, uint16_t *datalen);
 
 /*
  * Converts a sequence of _bytes_ of length _len_ to a t_icmp. A verify
