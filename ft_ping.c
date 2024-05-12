@@ -1,6 +1,8 @@
 #include "ft_ping.h"
 #include "icmp.h"
 #include "utils.h"
+#include <errno.h>
+#include <fcntl.h>
 #include <math.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -29,7 +31,6 @@ void add_host(char const *host) {
   if (!newhost)
     terminate(1, "Allocation error");
   newhost->host = host;
-  newhost->min_time_micro = UINT64_MAX;
   head = &(ping.hosts);
   while (*head)
     head = &((*head)->next);
@@ -45,8 +46,6 @@ void print_host_stats(t_host const *const host) {
   printf("--- %s ping statistics ---\n", host->host);
   printf("%u packets transmitted, ", host->transmitted);
   printf("%u packets received, ", host->received);
-  if (host->duplicated > 0)
-    printf("%+d duplicates, ", host->duplicated);
   packet_loss = 0;
   if (host->transmitted > 0)
     packet_loss = 100 - (host->received / host->transmitted * 100);
@@ -65,19 +64,6 @@ void print_host_stats(t_host const *const host) {
   printf("%.3f/", average_micro / 1000.0);
   printf("%.3f/", host->max_time_micro / 1000.0);
   printf("%.3f ms\n", stddev / 1000.0);
-}
-
-static inline void update_host_stats(t_host *host, t_host_time const time) {
-  t_host_time const time_diff_micro = time - host->last_timestamp;
-
-  host->transmitted++;
-  host->total_time_micro += time_diff_micro;
-  host->squared_total_time_micro += time_diff_micro * time_diff_micro;
-  host->last_timestamp = time;
-  if (host->min_time_micro > time_diff_micro)
-    host->min_time_micro = time_diff_micro;
-  if (host->max_time_micro < time_diff_micro)
-    host->max_time_micro = time_diff_micro;
 }
 
 static int resolve_host(t_host *host) {
@@ -110,6 +96,8 @@ static int host_setup_socket(void) {
 
   if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0)
     terminate(1, "ft_ping: unexpected error whilst creating socket");
+  if (fcntl(sockfd, F_SETFL, O_NONBLOCK) < 0)
+    terminate(1, "ft_ping: unexpected error whilst configuring FD");
   if (IS_TTL_SET(ping.settings.flags)) {
     sockopt = ping.settings.ttl;
     if (setsockopt(sockfd, IPPROTO_IP, IP_TTL, &sockopt, sizeof(uint64_t)) < 0)
@@ -154,7 +142,7 @@ static inline bool should_send_packet(t_host const *const host) {
   uint64_t interval;
 
   // The first packet should be instantly emitted
-  if (host->first_timestamp == host->last_timestamp)
+  if (host->last_timestamp == 0)
     return true;
 
   // The default interval is 1 second, but can be overwritten by the settings
@@ -167,7 +155,7 @@ static inline bool should_send_packet(t_host const *const host) {
   return true;
 }
 
-static inline void send_packet(int const sockfd, t_host *const host) {
+static inline void send_packet(int const sockfd, t_host const *const host) {
   t_icmp icmp = {0};
   struct sockaddr_in addr;
   struct timeval now;
@@ -198,13 +186,57 @@ static inline void send_packet(int const sockfd, t_host *const host) {
   free(icmp_payload);
 }
 
+static inline void receive_packet(int const sockfd, t_host *const host,
+                                  uint8_t *icmp_payload, uint16_t icmp_len) {
+  struct sockaddr_in addr;
+  t_icmp *icmp;
+
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = host->ip;
+
+  if (recvfrom(sockfd, icmp_payload, icmp_len, 0, (struct sockaddr *)&addr,
+               (socklen_t *)&icmp_len) < 0) {
+    if (errno != EAGAIN && errno != EWOULDBLOCK)
+      perror("ft_ping: error whilst receiving packet (continuing...)");
+    return;
+  }
+  printf("RECEIVED %u BYTES\n", icmp_len);
+  for (uint16_t i = 0; i < icmp_len; i++) {
+    printf("%2x ", *(icmp_payload + icmp_len));
+  }
+  puts("");
+  if (!is_valid_checksum(icmp_payload, icmp_len))
+    return;
+  icmp = (t_icmp *)icmp_payload;
+  if (icmp->identifier != getpid())
+    return;
+
+  if (IS_VERBOSE_SET(ping.settings.flags) && icmp->type != ICMP_ECHO_REPLY) {
+    // TODO Verbose output
+    return;
+  }
+
+  printf("WE GOT A RESPONSE :smile: FOR SEQ -> %u\n", icmp->sequence);
+}
+
+static inline void prepare_icmp_payload(uint8_t **payload, uint16_t *len) {
+  *len = 56 + sizeof(t_icmp);
+  if (IS_PATTERN_SET(ping.settings.flags))
+    *len = strlen(ping.settings.pattern) + sizeof(t_icmp);
+  if (!(*payload = malloc(*len)))
+    terminate(1, "ft_ping: malloc failed");
+}
+
 static void host_loop(int const sockfd, t_host *const host) {
   t_host_time time;
+  uint8_t *payload;
+  uint16_t payload_len;
 
   if (resolve_host(host) != 0)
     terminate(1, "ft_ping: host has invalid name");
 
-  (void)sockfd; // TODO Remove
+  prepare_icmp_payload(&payload, &payload_len);
+
   time = get_time_micro();
   host->first_timestamp = time;
   host->last_timestamp = time;
@@ -212,12 +244,14 @@ static void host_loop(int const sockfd, t_host *const host) {
     time = get_time_micro();
     if (should_send_packet(host)) {
       send_packet(sockfd, host);
-      printf("packet sent!\n");
-      update_host_stats(host, time); // TODO Use the received packet time, never
-                                     // the diff between execution times
+      host->transmitted++;
+      host->last_timestamp = time;
     }
+    receive_packet(sockfd, host, payload, payload_len);
     usleep(20);
   }
+
+  free(payload);
 }
 
 void main_loop(void) {
