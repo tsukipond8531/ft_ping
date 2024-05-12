@@ -1,7 +1,8 @@
 SRCS := utils.c \
 				ft_ping.c \
 				parser.c \
-				main.c
+				main.c \
+				icmp.c
 OBJS = $(SRCS:.c=.o)
 
 NAME := ft_ping
