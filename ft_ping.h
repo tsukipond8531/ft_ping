@@ -5,7 +5,6 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 
-#define DATA_SIZE 56
 #define IS_COUNT_SET(x) (x & 0x1)
 #define IS_INTERVAL_SET(x) (x & (0x1 << 1))
 #define IS_TTL_SET(x) (x & (0x1 << 2))
