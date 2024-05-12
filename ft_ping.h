@@ -31,7 +31,7 @@ typedef uint64_t t_host_time;
 */
 typedef struct s_host {
   char const *host;
-  struct in_addr ip;
+  in_addr_t ip;
   uint32_t transmitted;
   uint32_t received;
   uint32_t duplicated;

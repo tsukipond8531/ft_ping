@@ -1,9 +1,11 @@
 #include "ft_ping.h"
+#include "icmp.h"
 #include "utils.h"
 #include <math.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -97,7 +99,7 @@ static int resolve_host(t_host *host) {
       return 1;
     }
   }
-  host->ip.s_addr = host_as_ip;
+  host->ip = host_as_ip;
   return 0;
 }
 
@@ -165,7 +167,38 @@ static inline bool should_send_packet(t_host const *const host) {
   return true;
 }
 
-static void host_loop(int const sockfd, t_host *host) {
+static inline void send_packet(int const sockfd, t_host *const host) {
+  t_icmp icmp = {0};
+  struct sockaddr_in addr;
+  struct timeval now;
+  uint8_t *icmp_payload;
+  uint8_t *icmp_data;
+  uint16_t icmp_len;
+
+  addr.sin_family = AF_INET;
+  addr.sin_addr.s_addr = host->ip;
+
+  icmp.type = ICMP_ECHO;
+  icmp.identifier = getpid();
+  icmp.sequence = host->transmitted;
+  icmp_data = (uint8_t *)&ping;
+  icmp_len = 56;
+  if (IS_PATTERN_SET(ping.settings.flags)) {
+    icmp_data = (uint8_t *)ping.settings.pattern;
+    icmp_len = strlen(ping.settings.pattern);
+  }
+  gettimeofday(&now, NULL);
+  icmp.time = now;
+
+  icmp_payload = icmp_bytes(icmp, icmp_data, &icmp_len);
+  if (sendto(sockfd, icmp_payload, icmp_len, 0, (struct sockaddr *)&addr,
+             (socklen_t)sizeof(addr)) < 0) {
+    perror("ft_ping: error whilst sending packet (continuing...)");
+  }
+  free(icmp_payload);
+}
+
+static void host_loop(int const sockfd, t_host *const host) {
   t_host_time time;
 
   if (resolve_host(host) != 0)
@@ -178,7 +211,8 @@ static void host_loop(int const sockfd, t_host *host) {
   while (should_loop(host)) {
     time = get_time_micro();
     if (should_send_packet(host)) {
-      printf("64 bytes from %u\n", host->ip.s_addr); // TODO Actual ping
+      send_packet(sockfd, host);
+      printf("packet sent!\n");
       update_host_stats(host, time); // TODO Use the received packet time, never
                                      // the diff between execution times
     }
