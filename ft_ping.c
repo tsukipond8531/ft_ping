@@ -186,56 +186,46 @@ static inline void send_packet(int const sockfd, t_host const *const host) {
   free(icmp_payload);
 }
 
-static inline void receive_packet(int const sockfd, t_host *const host,
-                                  uint8_t *icmp_payload, uint16_t icmp_len) {
+static inline void receive_packet(int const sockfd, t_host *const host) {
   struct sockaddr_in addr;
-  t_icmp *icmp;
+  uint8_t buffer[1024];
+  ssize_t length;
+  t_icmp icmp;
 
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = host->ip;
+  length = sizeof(addr);
 
-  if (recvfrom(sockfd, icmp_payload, icmp_len, 0, (struct sockaddr *)&addr,
-               (socklen_t *)&icmp_len) < 0) {
+  if ((length = recvfrom(sockfd, buffer, 1024, 0, (struct sockaddr *)&addr,
+                         (socklen_t *)&length)) < 0) {
     if (errno != EAGAIN && errno != EWOULDBLOCK)
       perror("ft_ping: error whilst receiving packet (continuing...)");
     return;
   }
-  printf("RECEIVED %u BYTES\n", icmp_len);
-  for (uint16_t i = 0; i < icmp_len; i++) {
-    printf("%2x ", *(icmp_payload + icmp_len));
-  }
-  puts("");
-  if (!is_valid_checksum(icmp_payload, icmp_len))
-    return;
-  icmp = (t_icmp *)icmp_payload;
-  if (icmp->identifier != getpid())
+
+  printf("Here!\n");
+  if (icmp_from_bytes(&icmp, buffer) != 0)
     return;
 
-  if (IS_VERBOSE_SET(ping.settings.flags) && icmp->type != ICMP_ECHO_REPLY) {
+  printf("TYPE: %u\n", icmp.type);
+  printf("SEQ: %u\n", icmp.sequence);
+  printf("CODE: %u\n", icmp.code);
+  if (icmp.identifier != getpid())
+    return;
+
+  if (IS_VERBOSE_SET(ping.settings.flags) && icmp.type != ICMP_ECHO_REPLY) {
     // TODO Verbose output
     return;
   }
 
-  printf("WE GOT A RESPONSE :smile: FOR SEQ -> %u\n", icmp->sequence);
-}
-
-static inline void prepare_icmp_payload(uint8_t **payload, uint16_t *len) {
-  *len = 56 + sizeof(t_icmp);
-  if (IS_PATTERN_SET(ping.settings.flags))
-    *len = strlen(ping.settings.pattern) + sizeof(t_icmp);
-  if (!(*payload = malloc(*len)))
-    terminate(1, "ft_ping: malloc failed");
+  printf("WE GOT A RESPONSE :smile: FOR SEQ -> %u\n", icmp.sequence);
 }
 
 static void host_loop(int const sockfd, t_host *const host) {
   t_host_time time;
-  uint8_t *payload;
-  uint16_t payload_len;
 
   if (resolve_host(host) != 0)
     terminate(1, "ft_ping: host has invalid name");
-
-  prepare_icmp_payload(&payload, &payload_len);
 
   time = get_time_micro();
   host->first_timestamp = time;
@@ -247,11 +237,9 @@ static void host_loop(int const sockfd, t_host *const host) {
       host->transmitted++;
       host->last_timestamp = time;
     }
-    receive_packet(sockfd, host, payload, payload_len);
+    receive_packet(sockfd, host);
     usleep(20);
   }
-
-  free(payload);
 }
 
 void main_loop(void) {

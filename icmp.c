@@ -32,11 +32,14 @@ uint8_t *icmp_bytes(t_icmp icmp, uint8_t const *data, uint16_t *datalen) {
   return bytes;
 }
 
-int icmp_from_bytes(t_icmp *icmp, uint8_t const *const bytes, uint16_t len) {
-  if (!is_valid_checksum(bytes, len))
+int icmp_from_bytes(t_icmp *icmp, uint8_t const *const bytes) {
+  uint16_t const total_length = ntohs(*(uint16_t *)(bytes + 2));
+  uint8_t const ip_header_length = *bytes & 0xf;
+
+  if (!is_valid_checksum(bytes, total_length))
     return 1;
   // Shallow copying is the most efficient way of implementing it
-  *icmp = *(t_icmp *)bytes;
+  *icmp = *(t_icmp *)(bytes + WORDS_TO_BYTES(ip_header_length));
   icmp->sequence = ntohs(icmp->sequence);
   icmp->identifier = ntohs(icmp->identifier);
   icmp->time.tv_sec = ntohl(icmp->time.tv_sec);

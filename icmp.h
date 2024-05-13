@@ -5,6 +5,7 @@
 #include <netdb.h>
 #include <sys/time.h>
 
+#define WORDS_TO_BYTES(words) words * 4
 #define ICMP_ECHO 8
 #define ICMP_ECHO_REPLY 0
 
@@ -31,9 +32,13 @@ uint8_t *icmp_bytes(t_icmp icmp, uint8_t const *data, uint16_t *datalen);
  * Converts a sequence of _bytes_ of length _len_ to a t_icmp. A verify
  * of the checksum is done and, if failed, returns 1.
  *
+ * The _bytes_ are assumed to be received from a raw socket, so an initial
+ * IP header is expected, which will be used to understand the structure
+ * of the received information.
+ *
  * All fields will be automatically converted to host format and network
  * format will be assumed.
  */
-int icmp_from_bytes(t_icmp *icmp, uint8_t const *const bytes, uint16_t len);
+int icmp_from_bytes(t_icmp *icmp, uint8_t const *const bytes);
 
 #endif // !ICMP_H_
