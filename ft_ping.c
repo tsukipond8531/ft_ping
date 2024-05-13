@@ -129,7 +129,7 @@ static inline bool should_loop(t_host const *const host) {
 
   // If count is set, check if it has been reached
   if (IS_COUNT_SET(ping.settings.flags)) {
-    bool const count_reached = host->transmitted >= ping.settings.count;
+    bool const count_reached = host->received >= ping.settings.count;
     if (count_reached)
       return false;
   }
@@ -203,20 +203,16 @@ static inline void receive_packet(int const sockfd, t_host *const host) {
     return;
   }
 
-  printf("Here!\n");
   if (icmp_from_bytes(&icmp, buffer) != 0)
     return;
 
-  printf("TYPE: %u\n", icmp.type);
-  printf("SEQ: %u\n", icmp.sequence);
-  printf("CODE: %u\n", icmp.code);
-  if (icmp.identifier != getpid())
-    return;
-
-  if (IS_VERBOSE_SET(ping.settings.flags) && icmp.type != ICMP_ECHO_REPLY) {
-    // TODO Verbose output
+  if (icmp.type != ICMP_ECHO_REPLY) {
+    printf("RECEIVED PACKET NO REPLY! -> %u\n", icmp.type);
     return;
   }
+
+  if (icmp.identifier != getpid())
+    return;
 
   printf("WE GOT A RESPONSE :smile: FOR SEQ -> %u\n", icmp.sequence);
 }
@@ -229,7 +225,6 @@ static void host_loop(int const sockfd, t_host *const host) {
 
   time = get_time_micro();
   host->first_timestamp = time;
-  host->last_timestamp = time;
   while (should_loop(host)) {
     time = get_time_micro();
     if (should_send_packet(host)) {
