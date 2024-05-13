@@ -223,8 +223,7 @@ static void host_loop(int const sockfd, t_host *const host) {
   if (resolve_host(host) != 0)
     terminate(1, "ft_ping: host has invalid name");
 
-  time = get_time_micro();
-  host->first_timestamp = time;
+  host->first_timestamp = get_time_micro();
   while (should_loop(host)) {
     time = get_time_micro();
     if (should_send_packet(host)) {
