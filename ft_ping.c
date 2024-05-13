@@ -167,8 +167,8 @@ static inline void send_packet(int const sockfd, t_host const *const host) {
   struct sockaddr_in addr;
   struct timeval now;
   uint8_t *icmp_payload;
-  uint8_t *icmp_data;
   uint16_t icmp_len;
+  uint8_t icmp_data[DATA_SIZE + 1];
 
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = host->ip;
@@ -176,12 +176,11 @@ static inline void send_packet(int const sockfd, t_host const *const host) {
   icmp.type = ICMP_ECHO;
   icmp.identifier = getpid();
   icmp.sequence = host->transmitted;
-  icmp_data = (uint8_t *)&ping;
-  icmp_len = 56;
+
   if (IS_PATTERN_SET(ping.settings.flags)) {
-    icmp_data = (uint8_t *)ping.settings.pattern;
-    icmp_len = strlen(ping.settings.pattern);
+    strncpy((char *)icmp_data, ping.settings.pattern, DATA_SIZE);
   }
+
   gettimeofday(&now, NULL);
   icmp.time = now;
 
