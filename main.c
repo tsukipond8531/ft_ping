@@ -7,6 +7,5 @@ t_ft_ping ping;
 int main(int argc, char **argv) {
   load_arguments(argc, argv);
   main_loop();
-  terminate(0, "Success!");
-  return 0;
+  terminate(0, NULL);
 }

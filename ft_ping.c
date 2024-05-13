@@ -37,6 +37,15 @@ void add_host(char const *host) {
   *head = newhost;
 }
 
+static inline void print_host_header(t_host const *const host) {
+  char *ip_text;
+  struct in_addr addr;
+
+  addr.s_addr = host->ip;
+  ip_text = inet_ntoa(addr);
+  printf("PING %s (%s): %u data bytes\n", host->host, ip_text, DATA_SIZE);
+}
+
 void print_host_stats(t_host const *const host) {
   uint8_t packet_loss;
   double average_micro;
@@ -206,7 +215,7 @@ static inline void receive_packet(int const sockfd, t_host *const host) {
   if (icmp_from_bytes(&icmp, buffer) != 0)
     return;
 
-  if (icmp.type != ICMP_ECHO_REPLY) {
+  if (IS_VERBOSE_SET(ping.settings.flags) && icmp.type != ICMP_ECHO_REPLY) {
     printf("RECEIVED PACKET NO REPLY! -> %u\n", icmp.type);
     return;
   }
@@ -214,14 +223,15 @@ static inline void receive_packet(int const sockfd, t_host *const host) {
   if (icmp.identifier != getpid())
     return;
 
-  printf("WE GOT A RESPONSE :smile: FOR SEQ -> %u\n", icmp.sequence);
+  char *ip_txt = inet_ntoa(addr.sin_addr);
+
+  printf("64 bytes from %s: icmp_seq=%u ttl=%u time=28.199ms\n", ip_txt,
+         icmp.sequence, buffer[8]);
+  host->received++;
 }
 
 static void host_loop(int const sockfd, t_host *const host) {
   t_host_time time;
-
-  if (resolve_host(host) != 0)
-    terminate(1, "ft_ping: host has invalid name");
 
   host->first_timestamp = get_time_micro();
   while (should_loop(host)) {
@@ -240,6 +250,9 @@ void main_loop(void) {
   int const sockfd = host_setup_socket();
 
   for (t_host *host = ping.hosts; host; host = host->next) {
+    if (resolve_host(host) != 0)
+      terminate(1, "ft_ping: host has invalid name");
+    print_host_header(host);
     host_loop(sockfd, host);
     print_host_stats(host);
   }
