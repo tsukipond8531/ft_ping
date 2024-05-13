@@ -42,4 +42,13 @@ uint8_t *icmp_bytes(t_icmp icmp, uint8_t const *data, uint16_t *datalen);
  */
 int icmp_from_bytes(t_icmp *icmp, uint8_t const *const bytes);
 
+/*
+ * Extracts from a sequence of _bytes_ the TTL. A verify of the checksum
+ * is done and, if failed, returns 1.
+ *
+ * The _bytes_ are assumed to be received from a raw socket, so an initial
+ * IP header is expected, which will be used to extract the TTL.j
+ */
+int icmp_ttl_from_bytes(uint8_t *ttl, uint8_t const *const bytes);
+
 #endif // !ICMP_H_

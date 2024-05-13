@@ -46,3 +46,14 @@ int icmp_from_bytes(t_icmp *icmp, uint8_t const *const bytes) {
   icmp->time.tv_usec = ntohl(icmp->time.tv_usec);
   return 0;
 }
+
+int icmp_ttl_from_bytes(uint8_t *ttl, uint8_t const *const bytes) {
+  uint16_t const total_length = ntohs(*(uint16_t *)(bytes + 2));
+
+  if (!is_valid_checksum(bytes, total_length))
+    return 1;
+
+  *ttl = *(bytes + 8);
+
+  return 0;
+}
