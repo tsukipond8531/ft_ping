@@ -35,15 +35,6 @@ void add_host(char const *host) {
   *head = newhost;
 }
 
-static inline void print_host_header(t_host const *const host) {
-  char *ip_text;
-  struct in_addr addr;
-
-  addr.s_addr = host->ip;
-  ip_text = inet_ntoa(addr);
-  printf("PING %s (%s): %u data bytes\n", host->host, ip_text, DATA_SIZE);
-}
-
 void print_host_stats(t_host const *const host) {
   uint8_t packet_loss;
   double average_micro;
@@ -71,6 +62,18 @@ void print_host_stats(t_host const *const host) {
   printf("%.3f/", average_micro / 1000.0);
   printf("%.3f/", host->max_time_micro / 1000.0);
   printf("%.3f ms\n", stddev / 1000.0);
+}
+
+static inline void print_host_header(t_host const *const host) {
+  char *ip_text;
+  struct in_addr addr;
+
+  addr.s_addr = host->ip;
+  ip_text = inet_ntoa(addr);
+  printf("PING %s (%s): %u data bytes", host->host, ip_text, DATA_SIZE);
+  if (IS_VERBOSE_SET(ping.settings.flags))
+    printf(", id %#04x = %hu", icmp_get_id(), icmp_get_id());
+  puts("");
 }
 
 static int resolve_host(t_host *host) {
@@ -174,7 +177,7 @@ static inline void send_packet(int const sockfd, t_host const *const host) {
   addr.sin_addr.s_addr = host->ip;
 
   icmp.type = ICMP_ECHO;
-  icmp.identifier = getpid();
+  icmp.identifier = icmp_get_id();
   icmp.sequence = host->transmitted;
 
   bzero(icmp_data, DATA_SIZE + 1);

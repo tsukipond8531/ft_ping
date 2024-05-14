@@ -3,6 +3,9 @@
 #include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+uint16_t icmp_get_id(void) { return getpid(); }
 
 uint8_t *icmp_bytes(t_icmp icmp, uint8_t const *data, uint16_t *datalen) {
   uint8_t *bytes;

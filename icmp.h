@@ -21,6 +21,11 @@ typedef struct __attribute__((__packed__)) s_icmp {
 } t_icmp;
 
 /*
+ * ID for the ICMP packets
+ */
+uint16_t icmp_get_id(void);
+
+/*
  * Converts _icmp_ and _data_ to a byte array with the correct fields in
  * network format. Whilst the return value is the byte array, the resulting
  * size of the operation will be placed in _datalen_ if not NULL.
