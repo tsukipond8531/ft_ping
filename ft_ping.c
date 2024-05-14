@@ -177,6 +177,7 @@ static inline void send_packet(int const sockfd, t_host const *const host) {
   icmp.identifier = getpid();
   icmp.sequence = host->transmitted;
 
+  bzero(icmp_data, DATA_SIZE + 1);
   if (IS_PATTERN_SET(ping.settings.flags)) {
     strncpy((char *)icmp_data, ping.settings.pattern, DATA_SIZE);
   }
@@ -184,6 +185,7 @@ static inline void send_packet(int const sockfd, t_host const *const host) {
   gettimeofday(&now, NULL);
   icmp.time = now;
 
+  icmp_len = 0;
   icmp_payload = icmp_bytes(icmp, icmp_data, &icmp_len);
   if (sendto(sockfd, icmp_payload, icmp_len, 0, (struct sockaddr *)&addr,
              (socklen_t)sizeof(addr)) < 0) {
