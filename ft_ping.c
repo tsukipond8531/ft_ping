@@ -81,24 +81,23 @@ static inline void print_packet(uint8_t const *const packet) {
   struct iphdr const *const ip = (struct iphdr *)packet;
   t_icmp const *const icmp = (t_icmp *)(packet + 20);
 
-  for (size_t i = 0; i < ntohs(ip->tot_len); i++) {
-    printf("%02x ", *(packet + i));
-  }
-
   printf("IP Hdr Dump:\n ");
   for (size_t i = 0; i < WORDS_TO_BYTES(ip->ihl); i++)
     printf("%02x%s", *((uint8_t *)ip + i), i % 2 ? " " : "");
   puts("\nVr HL TOS  Len   ID Flg  off TTL Pro  cks      Src	Dst");
-  printf(" %hhu  %hhu %03hhu %04hx %02x   %hu %04hu  "
+  printf(" %hhu  %hhu %03hhu %04hu %02x   %hu %04hu  "
          "%03hhu  %02hhu %04hx %s %s\n",
          ip->version, ip->ihl, ip->tos, ntohs(ip->tot_len), ntohs(ip->id),
          ntohs(ip->frag_off) >> 13, ntohs(ip->frag_off) & 0x1fff, ip->ttl,
          ip->protocol, ntohs(ip->check),
          inet_ntoa(*(struct in_addr *)&ip->saddr),
          inet_ntoa(*(struct in_addr *)&ip->daddr));
-  printf("ICMP: type %hhu, code %hhu, size %hu, id %#04x, seq %#04x\n",
-         icmp->type, icmp->code, ntohs(ip->tot_len), ntohs(icmp->identifier),
-         ntohs(icmp->sequence));
+  printf("ICMP: type %hhu, code %hhu, size %hu", icmp->type, icmp->code,
+         ntohs(ip->tot_len) - WORDS_TO_BYTES(ip->ihl));
+  if (icmp->type == ICMP_ECHO || icmp->type == ICMP_ECHO_REPLY)
+    printf(", id %#04x, seq %#04x", ntohs(icmp->identifier),
+           ntohs(icmp->sequence));
+  puts("");
 }
 
 static int resolve_host(t_host *host) {
@@ -213,7 +212,7 @@ static inline void send_packet(int const sockfd, t_host const *const host) {
   gettimeofday(&now, NULL);
   icmp.time = now;
 
-  icmp_len = 0;
+  icmp_len = DATA_SIZE + 1;
   icmp_payload = icmp_bytes(icmp, icmp_data, &icmp_len);
   if (sendto(sockfd, icmp_payload, icmp_len, 0, (struct sockaddr *)&addr,
              (socklen_t)sizeof(addr)) < 0) {
