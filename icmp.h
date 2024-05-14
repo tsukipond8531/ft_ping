@@ -2,6 +2,7 @@
 #define ICMP_H_
 #pragma once
 
+#include "ft_ping.h"
 #include <netdb.h>
 #include <sys/time.h>
 
@@ -47,8 +48,18 @@ int icmp_from_bytes(t_icmp *icmp, uint8_t const *const bytes);
  * is done and, if failed, returns 1.
  *
  * The _bytes_ are assumed to be received from a raw socket, so an initial
- * IP header is expected, which will be used to extract the TTL.j
+ * IP header is expected, which will be used to extract the TTL.
  */
 int icmp_ttl_from_bytes(uint8_t *ttl, uint8_t const *const bytes);
+
+/*
+ * Extracts from a sequence of _bytes_ the timestamp in t_host_time format.
+ * A verify of the checksum is done and, if failed, returns 1.
+ *
+ * The _bytes_ are assumed to be received from a raw socket, so an initial
+ * IP header is expected, which will be used to extract the TTL.
+ */
+int icmp_timestamp_from_bytes(t_host_time *timestamp,
+                              uint8_t const *const bytes);
 
 #endif // !ICMP_H_

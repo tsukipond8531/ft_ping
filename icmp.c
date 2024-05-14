@@ -57,3 +57,19 @@ int icmp_ttl_from_bytes(uint8_t *ttl, uint8_t const *const bytes) {
 
   return 0;
 }
+
+int icmp_timestamp_from_bytes(t_host_time *timestamp,
+                              uint8_t const *const bytes) {
+  uint16_t const total_length = ntohs(*(uint16_t *)(bytes + 2));
+  uint8_t const ip_header_length = *bytes & 0xf;
+  struct timeval time;
+
+  if (!is_valid_checksum(bytes, total_length))
+    return 1;
+
+  // 8 bytes are before timeval
+  time = *(struct timeval *)(bytes + WORDS_TO_BYTES(ip_header_length) + 8);
+  *timestamp = time.tv_sec * 1000000 + time.tv_usec;
+
+  return 0;
+}
