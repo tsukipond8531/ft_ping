@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
+#include <netinet/ip.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,6 +75,30 @@ static inline void print_host_header(t_host const *const host) {
   if (IS_VERBOSE_SET(ping.settings.flags))
     printf(", id %#04x = %hu", icmp_get_id(), icmp_get_id());
   puts("");
+}
+
+static inline void print_packet(uint8_t const *const packet) {
+  struct iphdr const *const ip = (struct iphdr *)packet;
+  t_icmp const *const icmp = (t_icmp *)(packet + 20);
+
+  for (size_t i = 0; i < ntohs(ip->tot_len); i++) {
+    printf("%02x ", *(packet + i));
+  }
+
+  printf("IP Hdr Dump:\n ");
+  for (size_t i = 0; i < WORDS_TO_BYTES(ip->ihl); i++)
+    printf("%02x%s", *((uint8_t *)ip + i), i % 2 ? " " : "");
+  puts("\nVr HL TOS  Len   ID Flg  off TTL Pro  cks      Src	Dst");
+  printf(" %hhu  %hhu %03hhu %04hx %02x   %hu %04hu  "
+         "%03hhu  %02hhu %04hx %s %s\n",
+         ip->version, ip->ihl, ip->tos, ntohs(ip->tot_len), ntohs(ip->id),
+         ntohs(ip->frag_off) >> 13, ntohs(ip->frag_off) & 0x1fff, ip->ttl,
+         ip->protocol, ntohs(ip->check),
+         inet_ntoa(*(struct in_addr *)&ip->saddr),
+         inet_ntoa(*(struct in_addr *)&ip->daddr));
+  printf("ICMP: type %hhu, code %hhu, size %hu, id %#04x, seq %#04x\n",
+         icmp->type, icmp->code, ntohs(ip->tot_len), ntohs(icmp->identifier),
+         ntohs(icmp->sequence));
 }
 
 static int resolve_host(t_host *host) {
@@ -218,7 +243,8 @@ static inline void receive_packet(int const sockfd, t_host *const host) {
     return;
 
   if (IS_VERBOSE_SET(ping.settings.flags) && icmp.type != ICMP_ECHO_REPLY) {
-    printf("RECEIVED PACKET NO REPLY! -> %u\n", icmp.type);
+    print_packet(buffer);
+    host->received++;
     return;
   }
 
